@@ -2,7 +2,7 @@
 
 Node.js allows to trap signals sent to it. And that mostly works, except with SIGABRT.
 
-SIGABRT (abort) is correctly trapped by Node.js when sent to it from the outside (e.g. with the `kill` command), but not when the signal results from an `abort()` or a failed `assert()` function executed by a C or a C++ module (I don't know why :expressionless:).
+SIGABRT (abort) is correctly trapped by Node.js when sent to it from the outside (e.g. with the `kill` command), but not when the signal results from an `abort()` or a failed `assert()` function executed by a C or a C++ module (I don't know why, maybe it filters signals emitted by itself or one of its threads?).
 And most (if not almost all) SIGABRT occurences come from the process itself, one of its modules, or libraries, or whatever run C or C++ code.
 
 This small module is made specifically for these cases: it traps SIGABRT signals and prints a stacktrace starting from the signal-emitting function (NOT from the signal handler itself).
