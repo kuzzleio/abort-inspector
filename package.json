@@ -4,6 +4,7 @@
   "description": "Prints information when a thread/process aborts",
   "main": "index.js",
   "scripts": {
+    "postinstall": "./build.sh && npm run build",
     "configure": "node-gyp configure",
     "build": "node-gyp build"
   },

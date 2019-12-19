@@ -5,8 +5,8 @@
 #include <nan.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <execinfo.h>
-#include <ucontext.h>
+#include "libunwind.h"
+#include <cxxabi.h>
 
 void abortTrap (int signum, siginfo_t *info, void * ptr) {
   fprintf(stderr, "================== SIGABRT TRAPPED ==================\n");
@@ -15,19 +15,40 @@ void abortTrap (int signum, siginfo_t *info, void * ptr) {
     fprintf(stderr, "Origin: signal sent by an external process (PID: %u)\n", info->si_pid);
   }
   else {
-    void *traces[50];
-    size_t size = backtrace(traces, 50);
+    char buffer[1024];
+    unw_context_t *context = (unw_context_t*)ptr;
+    unw_cursor_t cursor;
 
-    char **messages = backtrace_symbols(traces, size);
-
-    for (size_t i = 1; i < size && messages != NULL; ++i) {
-      fprintf(stderr, "[bt]: (%lu) %s\n", i, messages[i]);
+    if (unw_init_local(&cursor, context) < 0) {
+      fprintf(stderr, "Unable to get aborted context backtrace\n");
+      return;
     }
-  }
 
+    while (unw_step(&cursor) > 0) {
+      unw_word_t ip, sp, offset;
+
+      unw_get_reg(&cursor, UNW_REG_IP, &ip);
+      unw_get_reg(&cursor, UNW_REG_SP, &sp);
+
+      buffer[0] = '\0';
+      if (!unw_get_proc_name(&cursor, buffer, 256, &offset)) {
+        int status;
+        const char * name = abi::__cxa_demangle(buffer, NULL, NULL, &status);
+        if (name != NULL) {
+          strcpy(buffer, name);
+        }
+      }
+
+      if (strlen(buffer) == 0) strcpy(buffer, "<unknown>");
+
+      fprintf(stderr, "ip = %lx, sp = %lx, %s\n", (long) ip, (long) sp, buffer);
+    }
+
+    fprintf(stderr, "=== End of stack trace.\n");
+  }
 }
 
-void monitor(const v8::FunctionCallbackInfo<v8::Value>& args) {
+void monitor (const v8::FunctionCallbackInfo<v8::Value>& args) {
   v8::Isolate* isolate = args.GetIsolate();
   args.GetReturnValue().Set(v8::Null(isolate));
 
@@ -37,6 +58,7 @@ void monitor(const v8::FunctionCallbackInfo<v8::Value>& args) {
   action.sa_flags = SA_SIGINFO;
 
   sigaction(SIGABRT, &action, NULL);
+
   fprintf(stderr, "Abort Inspector: now trapping SIGABRT signals.");
 }
 
