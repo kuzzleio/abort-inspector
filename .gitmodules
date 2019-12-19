@@ -1,0 +1,3 @@
+[submodule "lib/libunwind"]
+	path = lib/libunwind
+	url = git@github.com:libunwind/libunwind.git
