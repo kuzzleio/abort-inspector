@@ -25,7 +25,8 @@ void abortTrap (int signum, siginfo_t *info, void * ptr) {
     return;
   }
 
-  while (unw_step(&cursor) > 0) {
+  int step_status;
+  while ((step_status = unw_step(&cursor)) > 0) {
     unw_word_t ip, sp, offset;
 
     unw_get_reg(&cursor, UNW_REG_IP, &ip);
@@ -45,7 +46,10 @@ void abortTrap (int signum, siginfo_t *info, void * ptr) {
     fprintf(stderr, "ip = %lx, sp = %lx, %s\n", (long) ip, (long) sp, buffer);
   }
 
-  fprintf(stderr, "=== End of stack trace.\n");
+  if (!step_status)
+    fprintf(stderr, "=== End of stack trace.\n");
+  else
+    fprintf(stderr, "=== Unwinding stack trace error: %s\n", unw_strerror(step_status));
 }
 
 void monitor (const v8::FunctionCallbackInfo<v8::Value>& args) {
