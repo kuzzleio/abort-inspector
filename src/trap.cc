@@ -32,7 +32,7 @@ void abortTrap (int signum, siginfo_t *info, void * ptr) {
     unw_get_reg(&cursor, UNW_REG_SP, &sp);
 
     buffer[0] = '\0';
-    if (!unw_get_proc_name(&cursor, buffer, 256, &offset)) {
+    if (!unw_get_proc_name(&cursor, buffer, 1024, &offset)) {
       int status;
       const char * name = abi::__cxa_demangle(buffer, NULL, NULL, &status);
       if (name != NULL) {
