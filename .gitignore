@@ -1,4 +1,6 @@
 node_modules/
 build/
 !include/.gitignore
+include/*
 !lib/.gitignore
+lib/*
