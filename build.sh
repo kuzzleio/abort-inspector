@@ -21,7 +21,7 @@ cd $CWD
 
 cd $CWD/libunwind
 
-# run ./autogen.sh --disable-tests
+run ./autogen.sh --disable-tests
 run ./configure --prefix=$CWD --disable-tests
 run make clean
 run make
